@@ -243,6 +243,8 @@ end
 ---
 --- Note: We will only document `major` and `minor` versions, not `patch` ones. (only X and Y in X.Y.z)
 ---
+--- ## 2.21.0~
+---   - Add support for dart (`dartdoc`) !
 --- ## 2.20.0~
 ---   - Add support for `mini` snippet engine  ! (see |neogen-snippet-integration|)
 --- ## 2.19.0~
@@ -313,7 +315,7 @@ end
 ---     with multiple annotation conventions.
 ---@tag neogen-changelog
 ---@toc_entry Changes in neogen plugin
-neogen.version = "2.20.0"
+neogen.version = "2.21.0"
 --minidoc_afterlines_end
 
 return neogen
