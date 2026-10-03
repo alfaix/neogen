@@ -14,6 +14,14 @@ local function_signatures = {
     "redirecting_factory_constructor_signature",
 }
 
+local class_declarations = {
+    "class_definition",
+    "enum_declaration",
+    "mixin_declaration",
+    "extension_declaration",
+    "extension_type_declaration",
+}
+
 local parameter_tree = {
     { retrieve = "first", node_type = "identifier", extract = true, as = i.Parameter },
     {
@@ -28,7 +36,7 @@ local parameter_tree = {
 return {
     parent = {
         func = function_signatures,
-        class = { "class_definition", "enum_declaration", "mixin_declaration", "extension_declaration" },
+        class = class_declarations,
     },
     data = {
         func = {
@@ -57,13 +65,19 @@ return {
                         }
                         local nodes = nodes_utils:matching_nodes_from(node, tree)
                         local res = extractors:extract_from_matched(nodes)
-                        return res
+
+                        -- Wildcard parameters cannot be referenced, so there is nothing to document
+                        local parameters = vim.tbl_filter(function(name)
+                            return name ~= "_"
+                        end, res[i.Parameter] or {})
+
+                        return { [i.Parameter] = #parameters > 0 and parameters or nil }
                     end,
                 },
             },
         },
         class = {
-            ["class_definition|enum_declaration|mixin_declaration|extension_declaration"] = {
+            [table.concat(class_declarations, "|")] = {
                 ["0"] = {
                     extract = function()
                         return {}

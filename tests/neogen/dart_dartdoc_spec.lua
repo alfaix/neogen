@@ -68,6 +68,23 @@ void greet({required String name, int? age}) => print(name);
             assert.equal(expected, result)
         end)
 
+        it("skips wildcard arguments", function()
+            local source = [[
+void foo(int _, int bar, int _) {|cursor|}
+        ]]
+
+            local expected = [[
+/// [TODO:description]
+///
+/// * [bar]: [TODO:parameter]
+void foo(int _, int bar, int _) {}
+        ]]
+
+            local result = make_dartdoc(source)
+
+            assert.equal(expected, result)
+        end)
+
         it("works with methods and annotations", function()
             local source = [[
 class Foo {
