@@ -1,4 +1,5 @@
 local extractors = require("neogen.utilities.extractors")
+local helpers = require("neogen.utilities.helpers")
 local i = require("neogen.types.template").item
 local nodes_utils = require("neogen.utilities.nodes")
 local template = require("neogen.template")
@@ -33,6 +34,33 @@ local parameter_tree = {
     },
 }
 
+local formal_parameter_list = {
+    retrieve = "first",
+    node_type = "formal_parameter_list",
+    subtree = {
+        { retrieve = "all", node_type = "formal_parameter", subtree = parameter_tree },
+        {
+            retrieve = "first",
+            node_type = "optional_formal_parameters",
+            subtree = {
+                { retrieve = "all", node_type = "formal_parameter", subtree = parameter_tree },
+            },
+        },
+    },
+}
+
+local function extract_parameters(node, tree)
+    local nodes = nodes_utils:matching_nodes_from(node, tree)
+    local res = extractors:extract_from_matched(nodes)
+
+    -- Wildcard parameters cannot be referenced, so there is nothing to document
+    local parameters = vim.tbl_filter(function(name)
+        return name ~= "_"
+    end, res[i.Parameter] or {})
+
+    return { [i.Parameter] = #parameters > 0 and parameters or nil }
+end
+
 return {
     parent = {
         func = function_signatures,
@@ -43,35 +71,7 @@ return {
             [table.concat(function_signatures, "|")] = {
                 ["0"] = {
                     extract = function(node)
-                        local tree = {
-                            {
-                                retrieve = "first",
-                                node_type = "formal_parameter_list",
-                                subtree = {
-                                    { retrieve = "all", node_type = "formal_parameter", subtree = parameter_tree },
-                                    {
-                                        retrieve = "first",
-                                        node_type = "optional_formal_parameters",
-                                        subtree = {
-                                            {
-                                                retrieve = "all",
-                                                node_type = "formal_parameter",
-                                                subtree = parameter_tree,
-                                            },
-                                        },
-                                    },
-                                },
-                            },
-                        }
-                        local nodes = nodes_utils:matching_nodes_from(node, tree)
-                        local res = extractors:extract_from_matched(nodes)
-
-                        -- Wildcard parameters cannot be referenced, so there is nothing to document
-                        local parameters = vim.tbl_filter(function(name)
-                            return name ~= "_"
-                        end, res[i.Parameter] or {})
-
-                        return { [i.Parameter] = #parameters > 0 and parameters or nil }
+                        return extract_parameters(node, { formal_parameter_list })
                     end,
                 },
             },
@@ -79,8 +79,20 @@ return {
         class = {
             [table.concat(class_declarations, "|")] = {
                 ["0"] = {
-                    extract = function()
-                        return {}
+                    extract = function(node)
+                        -- The representation of an extension type is a primary constructor with a single parameter
+                        local representation = node:field("representation")[1]
+                        if representation then
+                            return { [i.Parameter] = helpers.get_node_text(representation:field("name")[1]) }
+                        end
+
+                        return extract_parameters(node, {
+                            {
+                                retrieve = "first",
+                                node_type = "primary_constructor",
+                                subtree = { formal_parameter_list },
+                            },
+                        })
                     end,
                 },
             },

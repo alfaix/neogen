@@ -5,5 +5,5 @@ return {
 
     { nil, "/// $1", { type = { "func", "class" } } },
     { nil, "///", { type = { "func", "class" } } },
-    { i.Parameter, "/// * [%s]: $1", { type = { "func" } } },
+    { i.Parameter, "/// * [%s]: $1", { type = { "func", "class" } } },
 }
